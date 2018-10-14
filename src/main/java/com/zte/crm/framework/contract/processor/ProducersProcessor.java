@@ -41,33 +41,30 @@ public class ProducersProcessor extends ProcessorSupport {
                 @Override
                 public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
                     super.visitClassDef(jcClassDecl);
-                    if (!jcClassDecl.name.toString()
-                            .contains("GeneratedClass")) {
-                        List<JCTree.JCExpression> implementing = jcClassDecl.implementing;
-                        ListBuffer<JCTree.JCExpression> buffer = new ListBuffer<>();
-                        implementing.forEach(im -> {
-                            im.accept(new TreeTranslator() {
-                                @Override
-                                public void visitIdent(JCTree.JCIdent tree) {
-                                    super.visitIdent(tree);
-                                    Contract annotation = tree.sym.getAnnotation(Contract.class);
-                                    if (annotation != null) {
-                                        buffer.append(im);
-                                    }
+                    List<JCTree.JCExpression> implementing = jcClassDecl.implementing;
+                    ListBuffer<JCTree.JCExpression> buffer = new ListBuffer<>();
+                    implementing.forEach(im -> {
+                        im.accept(new TreeTranslator() {
+                            @Override
+                            public void visitIdent(JCTree.JCIdent tree) {
+                                super.visitIdent(tree);
+                                Contract annotation = tree.sym.getAnnotation(Contract.class);
+                                if (annotation != null) {
+                                    buffer.append(im);
                                 }
-                            });
+                            }
                         });
+                    });
 
 
-                        buffer.forEach(t -> {
-                            jcClassDecl.defs = jcClassDecl.defs.prepend(makeStaticInnerClassDecl(t));
-                        });
+                    buffer.forEach(t -> {
+                        jcClassDecl.defs = jcClassDecl.defs.prepend(makeStaticInnerClassDecl(t));
+                    });
 
-                        JCTree.JCAnnotation comp =
-                                make.Annotation(getJavaType(COMP_CLASS),
-                                        List.<JCTree.JCExpression>nil());
-                        jcClassDecl.mods.annotations = jcClassDecl.mods.annotations.prepend(comp);
-                    }
+                    JCTree.JCAnnotation comp =
+                            make.Annotation(getJavaType(COMP_CLASS),
+                                    List.<JCTree.JCExpression>nil());
+                    jcClassDecl.mods.annotations = jcClassDecl.mods.annotations.prepend(comp);
                 }
             });
 
@@ -78,7 +75,7 @@ public class ProducersProcessor extends ProcessorSupport {
     private JCTree.JCClassDecl makeStaticInnerClassDecl(JCTree.JCExpression contract) {
         JCTree.JCClassDecl generatedClass = make
                 .ClassDef(make.Modifiers(Flags.STATIC | Flags.PUBLIC),
-                        javacNames.fromString("ServiceProviderFor" + contract.type.tsym.name.toString()),
+                        javacNames.fromString("WebServiceOf" + contract.type.tsym.name.toString()),
                         List.nil(),
                         null,
                         List.nil(),
