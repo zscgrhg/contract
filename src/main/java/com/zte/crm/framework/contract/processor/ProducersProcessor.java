@@ -78,7 +78,7 @@ public class ProducersProcessor extends ProcessorSupport {
     private JCTree.JCClassDecl makeStaticInnerClassDecl(JCTree.JCExpression contract) {
         JCTree.JCClassDecl generatedClass = make
                 .ClassDef(make.Modifiers(Flags.STATIC | Flags.PUBLIC),
-                        javacNames.fromString("GeneratedClassOf" + contract.type.tsym.name.toString()),
+                        javacNames.fromString("ServiceProviderFor" + contract.type.tsym.name.toString()),
                         List.nil(),
                         null,
                         List.nil(),
