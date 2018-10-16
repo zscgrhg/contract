@@ -1,2 +1,3 @@
 com.zte.crm.framework.contract.processor.ContractProcessor
-com.zte.crm.framework.contract.processor.ProducersProcessor
+com.zte.crm.framework.contract.processor.ProducerProcessor
+com.zte.crm.framework.contract.processor.CopyDefaultProcessor

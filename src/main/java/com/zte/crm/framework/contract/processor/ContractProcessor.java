@@ -6,9 +6,8 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.ListBuffer;
-import com.zte.crm.framework.contract.ContractNotImplementedException;
+import com.zte.crm.framework.contract.Delegate;
 import com.zte.crm.framework.contract.ProcessorSupport;
-import com.zte.crm.framework.contract.ServiceProvider;
 import com.zte.crm.framework.contract.annotation.Contract;
 
 import javax.annotation.processing.RoundEnvironment;
@@ -25,9 +24,10 @@ import static com.sun.source.tree.Tree.Kind.INTERFACE;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ContractProcessor extends ProcessorSupport {
 
-    private static final String PROVIDER_CLASS = ServiceProvider.class.getCanonicalName();
-    private static final String CNIE_CLASS = ContractNotImplementedException.class.getCanonicalName();
-    private static final String OBJECT_CLASS = Object.class.getCanonicalName();
+    private static final String CLASS_DELEGATE = Delegate.class.getCanonicalName();
+    private static final String CLASS_UNSUPPORTED = UnsupportedOperationException.class.getCanonicalName();
+    private static final String CLASS_OBJECT = Object.class.getCanonicalName();
+    private static final String NOT_IMPLEMENTED = "this feature is not yet implemented!";
 
 
     @Override
@@ -63,32 +63,30 @@ public class ContractProcessor extends ProcessorSupport {
         ListBuffer<JCTree.JCStatement> statements = new ListBuffer<>();
         JCTree.JCBlock ifProvider = addDelegateBlock(type, jcMethodDecl);
         JCTree.JCStatement ifstmt = make.If(make.TypeTest(make.Ident(javacNames.fromString("this")),
-                getJavaType(PROVIDER_CLASS)),
+                getJavaType(CLASS_DELEGATE)),
                 ifProvider,
                 null);
         statements.append(ifstmt);
-        statements.add(throwByName(CNIE_CLASS));
+        statements.add(throwByName(CLASS_UNSUPPORTED, NOT_IMPLEMENTED));
         JCTree.JCBlock body = make.Block(0, statements.toList());
         jcMethodDecl.body = body;
     }
 
-    //com.zte.crm.framework.contract.annotation.Contract.ServiceProvider
-
 
     private JCTree.JCBlock addDelegateBlock(Type type, JCTree.JCMethodDecl jcMethodDecl) {
         ListBuffer<JCTree.JCStatement> statements = new ListBuffer<>();
-        JCTree.JCTypeCast cast = castIdent("this", PROVIDER_CLASS);
-        JCTree.JCVariableDecl decl = varDef("sp", PROVIDER_CLASS, cast);
-        statements.append(decl);
-        JCTree.JCExpression expr = invoke("sp.getProvider");
-        JCTree.JCVariableDecl declp = varDef("p", OBJECT_CLASS, expr);
-        statements.append(declp);
-        JCTree.JCExpression type1 = make.Type(type);
-        JCTree.JCVariableDecl decl1 = varDef("ppp", type1, make.TypeCast(type1, expr));
-        JCTree.JCReturn ppp = make.Return(invokeWithVarDecl("ppp", jcMethodDecl.name, jcMethodDecl.params));
-        JCTree.JCStatement ifins = make.If(make.TypeTest(make.Ident(javacNames.fromString("p")),
-                type1),
-                block(decl1,
+        JCTree.JCTypeCast cast2delegate = castIdent("this", CLASS_DELEGATE);
+        JCTree.JCVariableDecl delegateVar = varDef("delegate", CLASS_DELEGATE, cast2delegate);
+        statements.append(delegateVar);
+        JCTree.JCExpression getExpr = invoke("delegate.getProducer");
+        JCTree.JCVariableDecl producerVar = varDef("producer", CLASS_OBJECT, getExpr);
+        statements.append(producerVar);
+        JCTree.JCExpression contractType = make.Type(type);
+        JCTree.JCVariableDecl contractorVar = varDef("contractor", contractType, make.TypeCast(contractType, getExpr));
+        JCTree.JCReturn ppp = make.Return(invokeWithVarDecl("contractor", jcMethodDecl.name, jcMethodDecl.params));
+        JCTree.JCStatement ifins = make.If(make.TypeTest(make.Ident(javacNames.fromString("producer")),
+                contractType),
+                block(contractorVar,
                         ppp
                 ),
                 null);
@@ -96,9 +94,6 @@ public class ContractProcessor extends ProcessorSupport {
         JCTree.JCBlock body = make.Block(0, statements.toList());
         return body;
     }
-
-
-
 
 
 }
