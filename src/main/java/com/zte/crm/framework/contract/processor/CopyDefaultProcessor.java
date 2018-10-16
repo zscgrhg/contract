@@ -80,7 +80,7 @@ public class CopyDefaultProcessor extends ProcessorSupport {
                 .filter(e -> e instanceof Symbol.MethodSymbol)
                 .map(e -> (Symbol.MethodSymbol) e)
                 .filter(e -> !key.contains(e.toString()))
-                //.filter(e -> e.isDefault())
+                .filter(e -> e.isDefault())
                 .forEach(msym -> {
                     Symbol.MethodSymbol copyed
                             = new Symbol.MethodSymbol(msym.flags_field & (~Flags.DEFAULT),
