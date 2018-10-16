@@ -19,6 +19,7 @@ import javax.lang.model.element.TypeElement;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.sun.source.tree.Tree.Kind.INTERFACE;
 
@@ -34,6 +35,15 @@ public class CopyDefaultProcessor extends ProcessorSupport {
             if (INTERFACE == kind) {
                 Type.ClassType clazz = (Type.ClassType) tc.asType();
                 List<Type> contracts = clazz.all_interfaces_field.stream()
+                        .flatMap(f -> {
+                            Type.ClassType tcf = (Type.ClassType) f;
+                            if (tcf.all_interfaces_field != null && tcf.all_interfaces_field.length() > 0) {
+                                return Stream.of(tcf.all_interfaces_field.stream(), Stream.of(tcf))
+                                        .flatMap(t -> t);
+                            } else {
+                                return Stream.of(tcf);
+                            }
+                        })
                         .filter(f -> f.tsym.getAnnotationsByType(Contract.class).length > 0)
                         .collect(Collectors.toList());
                 jct.accept(new TreeTranslator() {
@@ -54,7 +64,7 @@ public class CopyDefaultProcessor extends ProcessorSupport {
         enclosedElements.stream()
                 .filter(e -> e instanceof Symbol.MethodSymbol)
                 .map(e -> (Symbol.MethodSymbol) e)
-                .filter(e -> e.isDefault())
+                //.filter(e -> e.isDefault())
                 .forEach(msym -> {
                     Symbol.MethodSymbol copyed
                             = new Symbol.MethodSymbol(msym.flags_field & (~Flags.DEFAULT),
